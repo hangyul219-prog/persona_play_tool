@@ -20827,6 +20827,34 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "data:image/avif;ba
     return out;
   };
   setInterval(() => { if (PL.tab === 'talk') kick() }, 30000);  // the hour moves on with the session clock
+  /* ---------- 6) figures keep their spot ----------
+     The tool re-ran its placement over the last 60 lines on every paint; once a room has more than 60 lines that window slides
+     with each new line and the replay can move everyone. Now only new lines are placed: a newcomer takes a free spot (the
+     tool's preference order) or the spot of whoever spoke longest ago, and the figures still on stage stay put. */
+  const slots0 = plSlotsFor, SL = { N: 0, stage: null, last: {}, t: 0, tail: '' };
+  plSlotsFor = function (list) {
+    if (!list.length) { SL.stage = null; return slots0(list) }
+    const N = plStageN(), P = PL_STAGE[N];
+    let from = -1;
+    if (SL.stage && SL.N === N) for (let i = list.length - 1; i >= 0; i--) if (plTalkKey(list[i]) === SL.tail) { from = i; break }
+    if (from < 0) {  // first paint, reset, seed or a new stage size: the tool's own placement, then remember it
+      const r = slots0(list); SL.N = N; SL.stage = Array(N).fill(null); SL.last = {}; SL.t = 0;
+      for (const k in r.slots) SL.stage[r.slots[k]] = k;
+      list.forEach(m => { const k = plSpKey(m); if (k !== 'nar') SL.last[k] = ++SL.t });
+      SL.tail = plTalkKey(list[list.length - 1]); return r;
+    }
+    for (let i = from + 1; i < list.length; i++) {
+      const k = plSpKey(list[i]); if (k === 'nar') continue;
+      SL.last[k] = ++SL.t; if (SL.stage.includes(k)) continue;
+      let at = P.pref.find(j => !SL.stage[j]);
+      if (at == null) { at = 0; SL.stage.forEach((x, j) => { if (SL.last[x] < SL.last[SL.stage[at]]) at = j }) }
+      SL.stage[at] = k;
+    }
+    SL.tail = plTalkKey(list[list.length - 1]);
+    const slots = {}; SL.stage.forEach((k, i) => { if (k) slots[k] = i });
+    return { slots, order: SL.stage.filter(Boolean), P };
+  };
+
   window.VTStandFx = { norm, react, toggleWx, wxOn, key: keyOf };
   if (PL.tab === 'talk') plDirty('talk');
 })();

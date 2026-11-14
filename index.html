@@ -20112,6 +20112,9 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "data:image/avif;ba
     }
     ctx.restore(); return w;
   }
+  // walk sheet figures drawn facing left (line-book speaker ids, chars/travel walk1·walk2; the rest face right) — moved walkers
+  // used to walk backwards ('moonwalking'). shortcut: keyed by speaker id, re-check if the walk sheets are redrawn
+  const FACE_L = new Set([2, 4, 8, 13, 15, 16, 17, 18, 19, 20]);
   const gait = (t, sp, ph, h, wheels) => { const a = t * 6.5 * sp + ph, c2 = Math.cos(2 * a); return { leg: .47, spread: wheels ? 1 : .9 + .12 * c2, up: (1 - c2) / 2 * h * .022, lean: .03 + .012 * Math.sin(2 * a) } };
   const idle = (t, ph, h, k = 1) => ({ leg: .48, up: Math.sin(t * 1.9 + ph) * h * .004 * k, lean: Math.sin(t * .9 + ph) * .012 * k });
 
@@ -20195,7 +20198,12 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "data:image/avif;ba
     if (!st.crowd) {
       st.props = pick(R, 'idle', 1 + Math.floor(R() * 2)).map((f, i) => ({ f, x: W * (.15 + i * .75 + R() * .35), ph: R() * TAU }));
       // the first walker strolls along with the camera, big and near; the rest come and go both ways
-      st.crowd = pick(R, 'walk', 7 + Math.floor(R() * 4)).map((f, i) => ({ f, z: i ? R() : 1.18, x: i ? R() : (.55 + R() * .3) / 1.6, sp: .7 + R() * .6, dir: i && R() < .4 ? -1 : 1, ph: R() * TAU })).sort((a, b) => a.z - b.z);
+      st.crowd = pick(R, 'walk', 7 + Math.floor(R() * 4)).map((f, i) => {
+        const p = { f, z: i ? R() : 1.18, x: i ? R() : (.55 + R() * .3) / 1.6, sp: .7 + R() * .6, dir: i && R() < .4 ? -1 : 1, ph: R() * TAU };
+        if (p.dir > 0 && p.z <= 1) p.sp += .45;  // walkers going the camera's way outpace it: slower ones slid backwards on screen
+        p.face = p.dir * (FACE_L.has(f.who) ? -1 : 1);  // turn the picture to the way it walks
+        return p;
+      }).sort((a, b) => a.z - b.z);
       st.talk = chatter(R, env, [...st.props, ...st.crowd.filter(p => p.z > .35)], 3);
     }
     for (const p of st.props) { const x = p.x - t * cam, y = gY + H * .05, h = H * .3; drawFig(ctx, p.f, mix(th.ink, s[0], .3), x, y, h, idle(t, p.ph, h, 2)); p.hx = x + h * .1; p.hy = y - h * (1 - p.f.ty) }  // people standing about on the street
@@ -20204,7 +20212,7 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "data:image/avif;ba
       const x = wrap(p.x * W * 1.6 + (v - cam) * t, W * 1.6) - W * .3, y = gY + H * .03 + Math.min(p.z, 1) * H * .2 + (p.z > 1 ? H * .08 : 0);
       if (WET(env.wx)) { ctx.fillStyle = hex(th.ink, .3); ctx.beginPath(); ctx.ellipse(x, y, h * .12, h * .02, 0, 0, TAU); ctx.fill() }
       const g = gait(t, p.sp, p.ph, h, p.f.who === 8 || p.f.who === 12);  // bike / pram: wheels don't stride
-      drawFig(ctx, p.f, mix(th.ink, s[0], (1 - zq) * .4), x, y, h, { ...g, dir: p.dir }); p.hx = x + p.dir * h * .03; p.hy = y - g.up - h * (1 - p.f.ty);
+      drawFig(ctx, p.f, mix(th.ink, s[0], (1 - zq) * .4), x, y, h, { ...g, dir: p.face }); p.hx = x + p.face * h * .03; p.hy = y - g.up - h * (1 - p.f.ty);
     }
     weather(ctx, W, H, t, env, rng(3), .8);
     bubbles(ctx, W, H, t, th, st.talk);

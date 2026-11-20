@@ -22449,6 +22449,26 @@ html[data-theme="p4"] #vdUI .vc-no{left:30px}
 #vdUI .vc{min-height:74px}
 #vdUI .vc.on{min-height:116px}
 #vdUI .vd-roll,#vdUI .vd-ore,#vdUI .vd-head{z-index:40}
+/* top bar per series (P5 keeps the original red/black). P3R: white italic date with blue outline, cyan time band, navy slanted tabs. P4G: yellow date band, black/yellow block tabs */
+html[data-theme="p3"] .pl-top{background:linear-gradient(180deg,rgba(4,12,30,.97) 70%,rgba(4,12,30,0))}
+html[data-theme="p3"] .pl-date .pd-md{font-style:italic;text-shadow:2px 2px 0 #062a66,-1px -1px 0 #062a66,1px -1px 0 #062a66,-1px 1px 0 #062a66,4px 4px 0 #1f8fff}
+html[data-theme="p3"] .pl-date .pd-md i{text-shadow:2px 2px 0 #1f8fff,-1px -1px 0 #062a66,1px 1px 0 #062a66}
+html[data-theme="p3"] .pl-date .pd-slot{background:#1f8fff;color:#fff;box-shadow:3px 3px 0 #031634;font-style:italic}
+html[data-theme="p3"] .pl-tab{background:rgba(8,28,64,.92);color:#bfe8ff;box-shadow:3px 3px 0 #1f8fff;font-style:italic}
+html[data-theme="p3"] .pl-tab.on{background:#e9f7ff;color:#062a66;box-shadow:4px 4px 0 #1f8fff}
+html[data-theme="p3"] .pl-chip{background:rgba(8,28,64,.85);border-color:#1f6fd0;color:#cfe9ff}
+html[data-theme="p3"] .pl-chip.gm{background:#1f8fff;border-color:#1f8fff;color:#fff}
+html[data-theme="p4"] .pl-top{background:linear-gradient(180deg,rgba(14,12,6,.97) 70%,rgba(14,12,6,0))}
+html[data-theme="p4"] .pl-date .pd-md{text-shadow:3px 3px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,5px 5px 0 #ffd400}
+html[data-theme="p4"] .pl-date .pd-md i{text-shadow:3px 3px 0 #ffd400,-1px -1px 0 #000,1px 1px 0 #000}
+html[data-theme="p4"] .pl-date .pd-slot{background:#ffd400;color:#111;box-shadow:3px 3px 0 #000}
+html[data-theme="p4"] .pl-tab{background:#111;color:#ffd400;box-shadow:3px 3px 0 #ffd400;transform:none;border-bottom:3px solid #ffd400}
+html[data-theme="p4"] .pl-tab>span{transform:none}
+html[data-theme="p4"] .pl-tab.on{background:#ffd400;color:#111;box-shadow:4px 4px 0 #000}
+html[data-theme="p4"] .pl-chip{background:#111;border-color:#6b5a12;color:#ffe680}
+html[data-theme="p4"] .pl-chip.gm{background:#ffd400;border-color:#ffd400;color:#111}
+html[data-theme="p3"] .pd-dow{box-shadow:2px 2px 0 #1f8fff;background:#062a66}
+html[data-theme="p4"] .pd-dow{box-shadow:2px 2px 0 #ffd400}
 @media (min-width:761px){/* creation wizard: no web box — step card stack on the left over the series back arc, page content floating right */
 #wizroot{background:rgba(3,4,10,.86)!important;backdrop-filter:blur(6px)!important;padding:0!important}
 #wizroot::before{content:"";position:absolute;left:-6vh;top:-4vh;bottom:-4vh;aspect-ratio:1/2;background:var(--vd-back,none) left center/contain no-repeat;pointer-events:none;animation:vdBreath 6s ease-in-out infinite}

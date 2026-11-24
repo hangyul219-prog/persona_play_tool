@@ -22451,7 +22451,7 @@ html[data-theme="p4"] #vdUI .vc-no{left:30px}
 #vdUI .vd-roll,#vdUI .vd-ore,#vdUI .vd-head{z-index:40}
 
 /* 상성표 닫기: same look as the 인물전서 close, per series */
-#plvBattle{position:relative}#plvBattle>.aff-x{position:absolute;right:clamp(12px,2.6vw,40px);top:clamp(64px,7vw,96px);z-index:30;font-size:14px;padding:8px 18px 7px;--a:#e5001a}
+#plvBattle:not(:has(>#btWrap)){position:relative}#plvBattle>.aff-x{position:absolute;right:clamp(12px,2.6vw,40px);top:clamp(64px,7vw,96px);z-index:30;font-size:14px;padding:8px 18px 7px;--a:#e5001a}
 html[data-theme=p3] #plvBattle>.aff-x{background:#06163f;border-color:#8fe4ff;box-shadow:5px 5px 0 #020a22}
 html[data-theme=p4] #plvBattle>.aff-x{background:#15110a;border-color:#15110a;color:#ffd400;box-shadow:5px 5px 0 #ff8a00;transform:none;border-radius:6px}html[data-theme=p4] #plvBattle>.aff-x>span{transform:none}
 

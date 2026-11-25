@@ -26078,10 +26078,13 @@ async function cutIn(id){const a=A(),r=typeof plBtFind==='function'&&plBtFind(id
   await anim(950,k=>{c.x=-W*.04-k*W*.03},my);
   await anim(240,k=>{c.x=-W*.07-inq(k)*W*1.2;c.alpha=1-k*.3},my);fxDone(my)}
 // battle record from play/combatImpacts since the fight began (same data on every client)
-async function record(M){const ids=new Set([...M.allies,...M.foes].map(r=>r.id)),S0={};const st=id=>S0[id]||(S0[id]={dealt:0,taken:0,hits:0,best:null,el:{}});
+async function record(M){const ids=new Set([...M.allies,...M.foes].map(r=>r.id)),S0={};const st=id=>S0[id]||(S0[id]={dealt:0,taken:0,hits:0,best:null,el:{},weak:0,ail:0,down:0,buff:0,debuff:0,heal:0,scan:0});
   let L=[];try{const s=await FB.ref.child('play/combatImpacts').orderByChild('at').limitToLast(200).once('value');L=Object.values(s.val()||{}).filter(e=>e&&+e.at>=(H.cStart||0))}catch(e){}
-  for(const e of L){const r=e.result||{},d=+(r.actual??r.dmg)||0,a=String(e.actor||'').replace(/^v5:/,''),t=String(e.target||'').replace(/^v5:/,'');if(!r.saved||d<=0)continue;
-    const A2=[...ids].find(x=>x===a||x.slice(2)===a),T=[...ids].find(x=>x===t||x.slice(2)===t);
+  for(const e of L){const r=e.result||{},d=+(r.actual??r.dmg)||0,a=String(e.actor||'').replace(/^v5:/,''),t=String(e.target||'').replace(/^v5:/,'');if(!r.saved)continue;
+    const A2=[...ids].find(x=>x===a||x.slice(2)===a),T=[...ids].find(x=>x===t||x.slice(2)===t),k=e.kind;
+    if(A2){const s=st(A2),same=T&&T[0]===A2[0];if(r.ailApplied)s.ail++;if(k==='oreDown'&&T&&!same)s.down++;if(r.kind==='heal')s.heal+=+r.healed||0;if(k==='analyze'||k==='oreAnalyze')s.scan++;
+      if(['useful','guard','defense','ailment'].includes(k)&&T&&T!==A2||['useful','guard','defense'].includes(k)&&T===A2){same?s.buff++:s.debuff++}if(d>0&&r.aff==='weak')s.weak++}
+    if(d<=0)continue;
     if(A2){const s=st(A2);s.dealt+=d;s.hits++;const m=e.match||{};if(+m.w&&(!s.best||+m.w*100+ +m.h>s.best.w*100+s.best.h))s.best={w:+m.w,h:+m.h};const el=e.source&&e.source.elem;if(el)s.el[el]=(s.el[el]||0)+1}
     if(T)st(T).taken+=d}
   return st}
@@ -26103,16 +26106,21 @@ async function result(){const a=A();if(!a||!a.result)return;await boot();const m
     p.addChild(spr(a.plate,pw));
     const nm=txt(r.name,Math.round(pw*.045),'#fff',4);nm.x=(g[0]?g[0].x:pw*.4)+4;nm.y=(g[0]?g[0].y:ph*.2)-nm.height+2;p.addChild(nm);
     const nums=g.map((b,j)=>{const l=txt('0',Math.max(13,Math.round(b.h*.8)),'#fff',3);l.anchor.set(1,.5);l.x=b.x+b.w-b.h*.4;l.y=b.y+b.h/2;p.addChild(l);const t=txt(j?'TAKEN':'DMG',Math.max(11,Math.round(b.h*.55)),'#fff',3);t.anchor.set(0,.5);t.x=b.x+b.h*.5;t.y=l.y;p.addChild(t);return [l,j?s.taken:s.dealt]});
-    const info=txt(`${s.hits} HIT${s.best?`  ·  BEST ${s.best.w}×${s.best.h}`:''}`,Math.max(12,Math.round(pw*.03)),'#fff',4);info.x=g[0]?g[0].x+4:pw*.4;info.y=ph*.86;p.addChild(info);
-    if(r===mvp&&s.dealt>0){const m=new P.Container(),mw=pw*.3;m.addChild(spr(a.ribbon,mw));const t=txt('MVP',mw*a.ribbon.h/a.ribbon.w*.5,'#fff',4);t.anchor.set(.5);t.x=mw/2;t.y=mw*a.ribbon.h/a.ribbon.w/2;m.addChild(t);m.x=pw*.7;m.y=ph*.78;m.rotation=-.08;p.addChild(m);p.vbhMvp=m}
+    const info=txt([`${s.hits} HIT`,s.best&&`BEST ${s.best.w}×${s.best.h}`,s.weak&&`약점 ${s.weak}`,s.ail&&`상태이상 ${s.ail}`,s.down&&`다운 ${s.down}`,s.buff&&`버프 ${s.buff}`,s.debuff&&`디버프 ${s.debuff}`,s.heal&&`회복 ${s.heal}`].filter(Boolean).join('  ·  '),Math.max(12,Math.round(pw*.03)),'#fff',4);info.x=g[0]?g[0].x+4:pw*.4;info.y=ph*.86;p.addChild(info);
+    if(r===mvp&&s.dealt>0){const m=new P.Container(),mw=pw*.3;m.addChild(spr(a.ribbon,mw));const t=txt('MVP',mw*a.ribbon.h/a.ribbon.w*.5,'#fff',4);t.anchor.set(.5);t.x=mw/2;t.y=mw*a.ribbon.h/a.ribbon.w/2;m.addChild(t);m.x=pw*.72;m.y=-ph*.06;m.rotation=-.08;p.addChild(m);p.vbhMvp=m}
     p.x=W*.03;p.y=Hh*.17+i*gap;p.alpha=0;c.addChild(p);rows.push({p,bars,nums,x:p.x})}
   // right panels: ROUND / TIME / TOTAL DMG, then the grade stamp
-  const sec=Math.max(0,Math.round((Date.now()-(H.cStart||Date.now()))/1000)),vals=[['ROUND',M.round,v=>String(Math.round(v))],['TIME',sec,v=>{v=Math.round(v);return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}],['TOTAL DMG',team,v=>String(Math.round(v))]],lines=[];
-  vals.forEach(([k2,v,fmt],i)=>{const l=txt(k2,Math.round(Hh*.038),'#fff',0),vv=txt(fmt(0),Math.round(Hh*.065),'#fff',0);l.anchor.set(0,.5);vv.anchor.set(1,.5);l.x=X(L.l[i]);vv.x=X(L.r[i]);l.y=Y(L.py[i])+(L.r[i]-L.l[i])*a.result.w*k*.06;vv.y=Y(L.py[i]);l.rotation=vv.rotation=L.rot;l.alpha=vv.alpha=0;c.addChild(l,vv);lines.push({l,vv,v,fmt})});
+  const sec=Math.max(0,Math.round((Date.now()-(H.cStart||Date.now()))/1000)),sum=x=>al.reduce((t,r)=>t+st(r.id)[x],0),N=v=>String(Math.round(v)),lines=[];
+  const time=v=>{v=Math.round(v);return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')};
+  const panels=[[['ROUND',M.round,N],['TIME',sec,time],['TOTAL DMG',team,N]],
+    [['약점 공격',sum('weak'),N],['다운',sum('down'),N],['상태이상',sum('ail'),N]],
+    [['버프',sum('buff'),N],['디버프',sum('debuff'),N],['회복',sum('heal'),N]]];
+  panels.forEach((row,i)=>{const x0=X(L.l[i]),x1=X(L.r[i]),cw=(x1-x0)/3;row.forEach(([k2,v,fmt],j)=>{const cx=x0+cw*(j+.5),dy=-(cx-x0)*Math.tan(-L.rot||0);
+    const l=txt(k2,Math.round(Hh*.022),'#fff',3),vv=txt(fmt(0),Math.round(Hh*.055),j===0&&i===0?'#fff':'#fff',0);l.anchor.set(.5,1);vv.anchor.set(.5,0);l.x=vv.x=cx;l.y=Y(L.py[i])-Hh*.008+dy;vv.y=Y(L.py[i])-Hh*.012+dy;l.rotation=vv.rotation=L.rot;l.alpha=vv.alpha=0;c.addChild(l,vv);lines.push({l,vv,v,fmt})})});
   const G=txt(grade,Math.round(Hh*.3),pal.acc2,10);G.anchor.set(.5);G.x=Math.min(X(L.t[0]+.27),W-G.width*.6);G.y=Y(L.t[1]+.08);G.rotation=-.15;G.alpha=0;c.addChild(G);
   const hint=txt('CLICK TO CONTINUE',Math.round(Hh*.022),'#fff',4);hint.anchor.set(1,1);hint.x=W-24;hint.y=Hh-18;hint.alpha=0;c.addChild(hint);
   c.alpha=0;await anim(300,q=>{c.alpha=ease(q)},my);
-  await anim(900,q=>{rows.forEach((o,i)=>{const e=ease(q*1.8-i*.18);o.p.alpha=e;o.p.x=o.x-(1-e)*120});lines.forEach((o,i)=>{o.l.alpha=o.vv.alpha=ease(q*1.6-i*.15)})},my);
+  await anim(900,q=>{rows.forEach((o,i)=>{const e=ease(q*1.8-i*.18);o.p.alpha=e;o.p.x=o.x-(1-e)*120});lines.forEach((o,i)=>{o.l.alpha=o.vv.alpha=ease(q*1.8-i*.08)})},my);
   await anim(1100,q=>{const e=ease(q);rows.forEach(o=>{o.bars.forEach(([b,v])=>b.scale.x=v*e);o.nums.forEach(([l,v])=>l.text=String(Math.round(v*e)))});lines.forEach(o=>o.vv.text=o.fmt(o.v*e))},my);
   await anim(380,q=>{G.alpha=Math.min(1,q*3);G.scale.set(2.6-1.6*ease(q));c.x=q>.6?(Math.random()-.5)*14*(1-q):0},my);c.x=0;
   const close=()=>{removeEventListener('pointerdown',close,true);anim(300,q=>{c.alpha=1-q},my).then(()=>fxDone(my))};

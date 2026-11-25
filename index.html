@@ -26044,7 +26044,7 @@ async function build(){const a=A(),M=PL.btM,W=innerWidth,Hh=innerHeight,my=++bui
   const st=H.hud.stage;st.removeChildren().forEach(c=>c.destroy({children:true}));st.addChild(root);if(!H.born)H.born=performance.now()}
 function sig(){const M=PL.btM;return JSON.stringify([th(),innerWidth,innerHeight,curTurn(),cutOn(),PL.sel,M.round,M.allies.map(r=>[r.id,r.name,r.img&&r.img.length,r.hp,r.aw,r.down,r.dep]),M.order.map(o=>o.id),M.foes.map(f=>[f.id,f.dep,f.dead,f.hp,f.hpVis]),H.menu,[...document.querySelectorAll('#btLog .lg')].map(e=>e.textContent).join('|'),combat()])}
 function tick(){const on=active();if(on!==H.on){H.on=on;document.body.classList.toggle('vbh',on);H.hud.canvas.style.display=on?'':'none';if(!on){H.menu=false;H.born=0}H.sig=''}
-  document.body.classList.toggle('vbh-cb',on&&combat());if(!on)return;
+  document.body.classList.toggle('vbh-cb',on&&combat());if(combat()&&!H.cWas)H.cStart=+PL.map.combatAt||Date.now();H.cWas=combat();if(!on)return;
   const s=sig();if(s!==H.sig){H.sig=s;build()}
   const now=performance.now(),k=ease((now-H.born)/600),root=H.hud.stage.children[0];if(!root)return;
   for(const c of root.children){if(!c.vbh)continue;if(c.vbh.bx!=null){c.x=c.vbh.bx+(1-ease((now-H.born-c.vbh.i*70)/500))*420+(c.vbh.turn?Math.sin(now/260)*3:0)}}
@@ -26077,24 +26077,47 @@ async function cutIn(id){const a=A(),r=typeof plBtFind==='function'&&plBtFind(id
   await anim(260,k=>{c.x=(1-ease(k))*W-(W*.04)},my);
   await anim(950,k=>{c.x=-W*.04-k*W*.03},my);
   await anim(240,k=>{c.x=-W*.07-inq(k)*W*1.2;c.alpha=1-k*.3},my);fxDone(my)}
-async function result(){const a=A();if(!a||!a.result)return;await boot();const my=++fxRun,W=innerWidth,Hh=innerHeight,M=PL.btM||plBtModel();
-  a.result.t||(a.result.t=await tex(a.result.u));const f=fxStage(),c=new P.Container();f.stage.addChild(c);
+// battle record from play/combatImpacts since the fight began (same data on every client)
+async function record(M){const ids=new Set([...M.allies,...M.foes].map(r=>r.id)),S0={};const st=id=>S0[id]||(S0[id]={dealt:0,taken:0,hits:0,best:null,el:{}});
+  let L=[];try{const s=await FB.ref.child('play/combatImpacts').orderByChild('at').limitToLast(200).once('value');L=Object.values(s.val()||{}).filter(e=>e&&+e.at>=(H.cStart||0))}catch(e){}
+  for(const e of L){const r=e.result||{},d=+(r.actual??r.dmg)||0,a=String(e.actor||'').replace(/^v5:/,''),t=String(e.target||'').replace(/^v5:/,'');if(!r.saved||d<=0)continue;
+    const A2=[...ids].find(x=>x===a||x.slice(2)===a),T=[...ids].find(x=>x===t||x.slice(2)===t);
+    if(A2){const s=st(A2);s.dealt+=d;s.hits++;const m=e.match||{};if(+m.w&&(!s.best||+m.w*100+ +m.h>s.best.w*100+s.best.h))s.best={w:+m.w,h:+m.h};const el=e.source&&e.source.elem;if(el)s.el[el]=(s.el[el]||0)+1}
+    if(T)st(T).taken+=d}
+  return st}
+async function result(){const a=A();if(!a||!a.result)return;await boot();const my=++fxRun,W=innerWidth,Hh=innerHeight,M=PL.btM||plBtModel(),st=await record(M),pal=PAL[th()];
+  for(const k of Object.keys(a))if(!a[k].t)a[k].t=await tex(a[k].u);
+  const f=fxStage(),c=new P.Container();f.stage.addChild(c);
   const bg=new P.Sprite(a.result.t),k=Math.max(W/a.result.w,Hh/a.result.h);bg.scale.set(k);bg.x=(W-a.result.w*k)/2;bg.y=(Hh-a.result.h*k)/2;c.addChild(bg);
-  const X=f=>bg.x+f*a.result.w*k,Y=f=>bg.y+f*a.result.h*k;// positions are fractions of the art (title strip, 3 panels)
-  const L=RL[th()]||RL.p5,T=txt('RESULT',Math.round(Hh*.12),L.tc,0);T.anchor.set(.5);T.x=X(L.t[0]);T.y=Y(L.t[1]);T.rotation=L.t[2];c.addChild(T);
-  const al=M.allies.filter(r=>r.dep||M.allies.length<5),pw=Math.min(W*.42/Math.max(1,al.length),260),ps=[];
-  for(let i=0;i<al.length;i++){const p=new P.Container(),r=al[i],ph=pw*1.5,bx={x:0,y:0,w:pw,h:ph};portrait(p,await tex(r.img),bx,r.name);
-    const n=txt(r.name,Math.round(pw*.13),'#fff',5);n.y=ph-n.height-6;n.x=8;p.addChild(n);const [h,t]=r.hp||[0,0];const hp=txt(`HP ${h}/${t}`,Math.round(pw*.1),'#fff',4);hp.x=8;hp.y=n.y-hp.height;p.addChild(hp);
-    p.x=W*.04+i*(pw+10);p.y=Hh*.3+(i%2)*Hh*.05;p.rotation=-.06;p.alpha=0;c.addChild(p);ps.push(p)}
-  const rows=[['ROUND',String(M.round)],['DOWN',String(M.allies.filter(r=>r.down).length)+' / '+M.allies.length],['SHADOW',String(M.foes.filter(f=>f.dead).length)+' / '+M.foes.length]],lines=[];
-  const PY=L.py,PL0=L.l,PR=L.r;
-  rows.forEach(([k2,v],i)=>{const l=txt(k2,Math.round(Hh*.04),'#fff',0),vv=txt(v,Math.round(Hh*.065),'#fff',0);l.anchor.set(0,.5);vv.anchor.set(1,.5);l.x=X(PL0[i]);vv.x=X(PR[i]);l.y=Y(PY[i])+(PR[i]-PL0[i])*a.result.w*k*.06;vv.y=Y(PY[i]);l.rotation=vv.rotation=L.rot;l.alpha=vv.alpha=0;c.addChild(l,vv);lines.push(l,vv)});
-  c.alpha=0;await anim(300,k=>{c.alpha=ease(k)},my);
-  await anim(700,k=>{ps.forEach((p,i)=>{const q=ease(k*1.6-i*.2);p.alpha=q;p.x=W*.04+i*(pw+10)-(1-q)*80});lines.forEach((l,i)=>{l.alpha=ease(k*1.5-i*.08)})},my);
-  const close=()=>{removeEventListener('pointerdown',close,true);anim(300,k=>{c.alpha=1-k},my).then(()=>fxDone(my))};
-  H.fx.canvas.style.pointerEvents='auto';setTimeout(()=>{addEventListener('pointerdown',close,true)},400);
-  await anim(5200,()=>{},my);if(my===fxRun){H.fx.canvas.style.pointerEvents='none';close()}}
-
+  const X=f=>bg.x+f*a.result.w*k,Y=f=>bg.y+f*a.result.h*k,L=RL[th()]||RL.p5;
+  const T=txt('RESULT',Math.round(Hh*.12),L.tc,0);T.anchor.set(.5);T.x=X(L.t[0]);T.y=Y(L.t[1]);T.rotation=L.t[2];c.addChild(T);
+  const al=M.allies.filter(r=>r.dep||M.allies.length<5).slice(0,5),mx=x=>Math.max(1,...al.map(r=>st(r.id)[x]));
+  const mvp=al.slice().sort((p,q)=>st(q.id).dealt-st(p.id).dealt)[0],team=al.reduce((s,r)=>s+st(r.id).dealt,0);
+  const hpAvg=al.length?al.reduce((s,r)=>s+(r.hp&&r.hp[1]?r.hp[0]/r.hp[1]:1),0)/al.length:1,downs=al.filter(r=>r.down).length;
+  const grade=downs===0&&hpAvg>=.7?'S':downs===0&&hpAvg>=.45?'A':downs<=1?'B':'C';
+  // party rows: the HUD plate (gauge 1 = damage dealt, gauge 2 = damage taken)
+  const pw=Math.min(W*.4,520),ph=pw*a.plate.h/a.plate.w,gap=Math.min(ph*1.14,(Hh*.78)/Math.max(1,al.length)),rows=[];
+  for(let i=0;i<al.length;i++){const r=al[i],s=st(r.id),p=new P.Container();portrait(p,await tex(r.img),win(a.plate,pw,0),r.name);
+    const g=[win(a.plate,pw,1),win(a.plate,pw,2)].filter(Boolean).sort((u,v)=>u.y-v.y);const bars=[];
+    g.forEach((b,j)=>{const q=new P.Graphics().rect(0,0,b.w,b.h).fill(j?pal.hp:pal.aw);q.x=b.x;q.y=b.y;q.scale.x=0;p.addChild(q);bars.push([q,j?s.taken/mx('taken'):s.dealt/mx('dealt')])});
+    p.addChild(spr(a.plate,pw));
+    const nm=txt(r.name,Math.round(pw*.045),'#fff',4);nm.x=(g[0]?g[0].x:pw*.4)+4;nm.y=(g[0]?g[0].y:ph*.2)-nm.height+2;p.addChild(nm);
+    const nums=g.map((b,j)=>{const l=txt('0',Math.max(13,Math.round(b.h*.8)),'#fff',3);l.anchor.set(1,.5);l.x=b.x+b.w-b.h*.4;l.y=b.y+b.h/2;p.addChild(l);const t=txt(j?'TAKEN':'DMG',Math.max(11,Math.round(b.h*.55)),'#fff',3);t.anchor.set(0,.5);t.x=b.x+b.h*.5;t.y=l.y;p.addChild(t);return [l,j?s.taken:s.dealt]});
+    const info=txt(`${s.hits} HIT${s.best?`  ·  BEST ${s.best.w}×${s.best.h}`:''}`,Math.max(12,Math.round(pw*.03)),'#fff',4);info.x=g[0]?g[0].x+4:pw*.4;info.y=ph*.86;p.addChild(info);
+    if(r===mvp&&s.dealt>0){const m=new P.Container(),mw=pw*.3;m.addChild(spr(a.ribbon,mw));const t=txt('MVP',mw*a.ribbon.h/a.ribbon.w*.5,'#fff',4);t.anchor.set(.5);t.x=mw/2;t.y=mw*a.ribbon.h/a.ribbon.w/2;m.addChild(t);m.x=pw*.7;m.y=ph*.78;m.rotation=-.08;p.addChild(m);p.vbhMvp=m}
+    p.x=W*.03;p.y=Hh*.17+i*gap;p.alpha=0;c.addChild(p);rows.push({p,bars,nums,x:p.x})}
+  // right panels: ROUND / TIME / TOTAL DMG, then the grade stamp
+  const sec=Math.max(0,Math.round((Date.now()-(H.cStart||Date.now()))/1000)),vals=[['ROUND',M.round,v=>String(Math.round(v))],['TIME',sec,v=>{v=Math.round(v);return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')}],['TOTAL DMG',team,v=>String(Math.round(v))]],lines=[];
+  vals.forEach(([k2,v,fmt],i)=>{const l=txt(k2,Math.round(Hh*.038),'#fff',0),vv=txt(fmt(0),Math.round(Hh*.065),'#fff',0);l.anchor.set(0,.5);vv.anchor.set(1,.5);l.x=X(L.l[i]);vv.x=X(L.r[i]);l.y=Y(L.py[i])+(L.r[i]-L.l[i])*a.result.w*k*.06;vv.y=Y(L.py[i]);l.rotation=vv.rotation=L.rot;l.alpha=vv.alpha=0;c.addChild(l,vv);lines.push({l,vv,v,fmt})});
+  const G=txt(grade,Math.round(Hh*.3),pal.acc2,10);G.anchor.set(.5);G.x=Math.min(X(L.t[0]+.27),W-G.width*.6);G.y=Y(L.t[1]+.08);G.rotation=-.15;G.alpha=0;c.addChild(G);
+  const hint=txt('CLICK TO CONTINUE',Math.round(Hh*.022),'#fff',4);hint.anchor.set(1,1);hint.x=W-24;hint.y=Hh-18;hint.alpha=0;c.addChild(hint);
+  c.alpha=0;await anim(300,q=>{c.alpha=ease(q)},my);
+  await anim(900,q=>{rows.forEach((o,i)=>{const e=ease(q*1.8-i*.18);o.p.alpha=e;o.p.x=o.x-(1-e)*120});lines.forEach((o,i)=>{o.l.alpha=o.vv.alpha=ease(q*1.6-i*.15)})},my);
+  await anim(1100,q=>{const e=ease(q);rows.forEach(o=>{o.bars.forEach(([b,v])=>b.scale.x=v*e);o.nums.forEach(([l,v])=>l.text=String(Math.round(v*e)))});lines.forEach(o=>o.vv.text=o.fmt(o.v*e))},my);
+  await anim(380,q=>{G.alpha=Math.min(1,q*3);G.scale.set(2.6-1.6*ease(q));c.x=q>.6?(Math.random()-.5)*14*(1-q):0},my);c.x=0;
+  const close=()=>{removeEventListener('pointerdown',close,true);anim(300,q=>{c.alpha=1-q},my).then(()=>fxDone(my))};
+  H.fx.canvas.style.pointerEvents='auto';addEventListener('pointerdown',close,true);
+  await anim(9000,q=>{hint.alpha=.5+.5*Math.sin(q*40);rows.forEach(o=>{if(o.p.vbhMvp)o.p.vbhMvp.scale.set(1+.05*Math.sin(q*30))})},my);if(my===fxRun){H.fx.canvas.style.pointerEvents='none';close()}}
 function hook(){
   if(typeof window.plTurnFx==='function'&&!plTurnFx.vbh){const b=plTurnFx;window.plTurnFx=plTurnFx=function(id){const o=b.apply(this,arguments);if(H.on){const x=$('#btFx .bt-tfx');x&&x.remove();if(cutOn()&&curTurn()===id)cutIn(id)}return o};plTurnFx.vbh=1}
   if(typeof window.plPlayBattleEnd==='function'&&!plPlayBattleEnd.vbh){const b=plPlayBattleEnd;window.plPlayBattleEnd=plPlayBattleEnd=function(){const o=b.apply(this,arguments);if(A()&&innerWidth>760)setTimeout(result,700);return o};plPlayBattleEnd.vbh=1}}

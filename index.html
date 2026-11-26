@@ -23151,7 +23151,7 @@ function paint(){const c=cmd(),wrap=document.getElementById('btWrap');if(!c||!wr
    typing in the copy it is left alone and refreshed on blur. */
 function oreCopy(c,ui){const body=ui.querySelector('.vd-ore-body'),src=c.querySelector('.vp-ore-panel');
   const html=src?src.innerHTML.replace(/\sid="vdh-/g,' id="'):'';ui.classList.toggle('vd-has-ore',!!html);
-  if(body._h!==html){const f=document.activeElement;if(f&&body.contains(f)&&/^(INPUT|TEXTAREA)$/.test(f.tagName))body._wait=true;else{body.innerHTML=html;body._h=html}}
+  if(body._h!==html){const f=document.activeElement;if(f&&body.contains(f)&&/^(INPUT|TEXTAREA)$/.test(f.tagName))body._wait=true;else{const y=body.scrollTop,open=[...body.querySelectorAll('details')].map(d=>d.open);body.innerHTML=html;body._h=html;body.querySelectorAll('details').forEach((d,i)=>{if(open[i])d.open=true});body.scrollTop=y}}
   src?.querySelectorAll('[id]').forEach(x=>{if(!x.id.startsWith('vdh-'))x.id='vdh-'+x.id});
   ui.style.setProperty('--vd-ore-h',(ui.querySelector('.vd-ore').offsetHeight||0)+'px')}
 /* DECLARE / RECALL sit on the left, next to where actions are chosen: in the card screen they take the ROLL spot
@@ -26029,7 +26029,7 @@ async function mkApp(z){const a=new P.Application();await a.init({backgroundAlph
   Object.assign(a.canvas.style,{position:'fixed',left:0,top:0,width:'100vw',height:'100vh',pointerEvents:'none',zIndex:z});a.canvas.className='vbh-cv';document.body.appendChild(a.canvas);return a}
 let booting=null;
 function boot(){return booting||(booting=(async()=>{H.hud=await mkApp(30);H.fx=await mkApp(2147480500);H.fx.canvas.style.display='none';H.hud.ticker.add(tick)})())}
-const active=()=>!!(A()&&typeof PL!=='undefined'&&PL.tab==='battle'&&PL.ui&&PL.ui.bview!=='table'&&$('#btWrap')&&innerWidth>760&&PL.btM);
+const active=()=>!!(A()&&typeof PL!=='undefined'&&PL.tab==='battle'&&PL.ui&&PL.ui.bview!=='table'&&$('#btWrap')&&innerWidth>760);// PL.btM is not required: effect saves null it for a frame before the repaint
 // turn marks only during ORE declaration (roll / resolve have no 'whose turn')
 const curTurn=()=>{const d=window.__VP_ORE_TEST&&__VP_ORE_TEST.state;return d&&d.active&&d.phase!=='declare'?'':PL.turn||''};
 const CUTK='vp.bhud.cut',cutOn=()=>{try{return localStorage.getItem(CUTK)!=='0'}catch(e){return true}};
@@ -26102,9 +26102,11 @@ async function build(){const a=A(),M=PL.btM,k=UK(),W=innerWidth/k,Hh=innerHeight
   if(my!==building){root.destroy({children:true});return}
   const st=H.hud.stage;st.removeChildren().forEach(c=>c.destroy({children:true}));st.addChild(root);if(!H.born)H.born=performance.now()}
 function sig(){const M=PL.btM;return JSON.stringify([th(),innerWidth,innerHeight,UK(),curTurn(),cutOn(),PL.sel,M.round,M.allies.map(r=>[r.id,r.name,r.img&&r.img.length,r.hp,r.aw,r.down,r.dep]),M.order.map(o=>o.id),M.foes.map(f=>[f.id,f.dep,f.dead,f.hp,f.hpVis]),H.menu,[...document.querySelectorAll('#btLog .lg')].map(e=>e.textContent).join('|'),combat()])}
-function tick(){const on=active();if(on!==H.on){H.on=on;document.body.classList.toggle('vbh',on);H.hud.canvas.style.display=on?'':'none';if(!on){H.menu=false;H.born=0}H.sig=''}
+function tick(){const want=active(),t=performance.now();if(want)H.offT=0;else if(H.on&&!H.offT)H.offT=t;
+  // a one-frame gap (battle view re-rendered, model rebuilt) must not switch the HUD off: the old DOM HUD would flash through
+  const on=want||(H.on&&t-H.offT<500);if(on!==H.on){H.on=on;document.body.classList.toggle('vbh',on);H.hud.canvas.style.display=on?'':'none';if(!on){H.menu=false;H.born=0}H.sig=''}
   document.body.classList.toggle('vbh-cb',on&&combat());if(combat()&&!H.cWas)H.cStart=+PL.map.combatAt||Date.now();H.cWas=combat();if(!on)return;
-  const s=sig();if(s!==H.sig){H.sig=s;build()}
+  if(PL.btM&&$('#btWrap')){const s=sig();if(s!==H.sig){H.sig=s;build()}}
   const now=performance.now(),k=ease((now-H.born)/600),root=H.hud.stage.children[0];if(!root)return;
   for(const c of root.children){if(!c.vbh)continue;if(c.vbh.bx!=null){c.x=c.vbh.bx+(1-ease((now-H.born-c.vbh.i*70)/500))*420+(c.vbh.turn?Math.sin(now/260)*3:0)}}
   root.alpha=k}

@@ -15689,8 +15689,10 @@ const _dateW=plDateW;plDateW=function(){const out=_dateW.apply(this,arguments);t
 /* ---------- 매초 교시 확인 (네트워크 없음) ---------- */
 function tick(){if(!plIn()||!$('#app .pl'))return;if(SC.ref!==FB.ref){SC.ref=FB.ref;SC.ready=false}
  const p=phase(),key=p?.key||'';slotText();
- if(!SC.ready){SC.ready=!!PL.town;SC.key=key;return}
- if(key!==SC.key){const prev=SC.key;SC.key=key;if(p&&prev!==undefined){cut(p);const c=C();if(p.roll&&!p.exam&&c&&!plIsGM()&&!doneToday(c,new Date(gNow())))setTimeout(()=>toast(`★ ${p.subj} — 오늘의 수업 판정 시간이야. 캘린더 탭 시간표에서 🎲 수업 판정을 눌러 줘.`),3600)}if(PL.tab==='cal')plDirty('cal')}}
+ const src=(()=>{const g=typeof WB!=='undefined'&&WB.data?.wx?.cfg;return g?[g.date,g.time,g.at,g.stop].join('|'):''})();
+ if(!SC.ready){SC.ready=!!PL.town;SC.key=key;SC.src=src;SC.readyAt=Date.now();return}
+ if(src!==SC.src){SC.src=src;SC.key=key;if(PL.tab==='cal')plDirty('cal');return}/* 게임 날짜·시각 설정이 (늦게) 도착하거나 바뀐 것: 기준만 갱신 */
+ if(key!==SC.key){const prev=SC.key;SC.key=key;if(Date.now()-(SC.readyAt||0)<1e4){if(PL.tab==='cal')plDirty('cal');return}/* 입장·새로고침 직후 10초는 시간·캘린더 값이 뒤늦게 도착해 바뀌는 것 — 기준만 갱신하고 연출 안 함 */if(p&&prev!==undefined){cut(p);const c=C();if(p.roll&&!p.exam&&c&&!plIsGM()&&!doneToday(c,new Date(gNow())))setTimeout(()=>toast(`★ ${p.subj} — 오늘의 수업 판정 시간이야. 캘린더 탭 시간표에서 🎲 수업 판정을 눌러 줘.`),3600)}if(PL.tab==='cal')plDirty('cal')}}
 clearInterval(SC.timer);SC.timer=setInterval(()=>{try{tick()}catch(e){}},1000);
 
 /* ---------- GM '다시 알리기' (play/town/school/ring) ---------- */

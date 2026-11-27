@@ -19676,7 +19676,7 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "assets/4138ba7eba6
     await wait(720);
     await transition(V.theme, async () => {
       stageEl.classList.remove('pressed');
-      await show(V.theme + 'm'); V.sel = host.hasChars() ? SC[V.theme + 'm'].menu.indexOf('m_load') : SC[V.theme + 'm'].menu.indexOf('m_new');
+      await show(V.theme + 'm'); V.sel = host.hasChars() || !host.me() ? SC[V.theme + 'm'].menu.indexOf('m_load') : SC[V.theme + 'm'].menu.indexOf('m_new');
       setStage('menu'); enterUI('menu');
     });
     V.busy = false;

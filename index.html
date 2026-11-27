@@ -20052,10 +20052,19 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "assets/4138ba7eba6
   // 단축키 (사용자 요청 2026-11-27): Alt+Z 잡담창 열고 닫기, Alt+X 대화 기록 열고 닫기 — Alt 조합이라 입력 중에도 글자가 안 들어감
   document.addEventListener('keydown', e => {
     if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.repeat) return;  // 한글 조합 중(isComposing)이어도 Alt 조합은 받음
-    const k = e.code === 'KeyZ' ? 'c' : e.code === 'KeyX' ? 'l' : ''; if (!k) return;
+    const dig = /^Digit\d$/.test(e.code) ? (+e.code.slice(5) + 9) % 10 : -1;  // Alt+1~9,0 → 스탠딩 1~10번째
+    const k = e.code === 'KeyZ' ? 'c' : e.code === 'KeyX' ? 'l' : dig >= 0 ? 'ex' : ''; if (!k) return;
     const vt = document.getElementById('vt'), titleUp = vt && vt.isConnected && getComputedStyle(vt).display !== 'none' && !vt.hidden;
     if (typeof PL === 'undefined' || titleUp || document.querySelector('#vr,.gate,#wizroot')) return;  // 타이틀·인트로·캐릭터 선택 중엔 무시
     e.preventDefault(); e.stopPropagation();
+    if (k === 'ex') {  // 지금 말하는 인물의 스탠딩 고르기: 없는 번호는 무시(다음 인물로 넘어가지 않음)
+      if (PL.tab !== 'talk') return;
+      const x = document.getElementById('tkEx'); if (!x || dig >= x.options.length || x.options.length < 2) return;
+      e.preventDefault(); e.stopPropagation();
+      const face = document.querySelector(`#plvTalk .vt-faces [data-i="${dig}"]`);
+      if (face) face.click(); else { x.value = String(dig); x.dispatchEvent(new Event('change', { bubbles: true })) }
+      return;
+    }
     if (k === 'c') { const ae = document.activeElement; if (PL.ui.ooc && ae && ae.closest?.('#plOoc')) ae.blur(); A.plOocToggle(); return }
     if (PL.tab !== 'talk') { PL.talkLog = true; A.plTab({ dataset: { v: 'talk' } }); return }
     if (PL.talkLog && document.activeElement?.closest?.('#tkLog')) document.activeElement.blur();

@@ -20047,6 +20047,17 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "assets/4138ba7eba6
     const t = txt(); if (!t) return;
     e.preventDefault(); e.stopImmediatePropagation(); t.focus();
   }, true);
+  // 단축키 (사용자 요청 2026-11-27): Alt+C 잡담창 열고 닫기, Alt+L 대화 기록 열고 닫기 — Alt 조합이라 입력 중에도 글자가 안 들어감
+  document.addEventListener('keydown', e => {
+    if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.isComposing || e.repeat) return;
+    const k = e.code === 'KeyC' ? 'c' : e.code === 'KeyL' ? 'l' : ''; if (!k) return;
+    const vt = document.getElementById('vt'), titleUp = vt && vt.isConnected && getComputedStyle(vt).display !== 'none' && !vt.hidden;
+    if (typeof PL === 'undefined' || titleUp || document.querySelector('#vr,.gate,#wizroot')) return;  // 타이틀·인트로·캐릭터 선택 중엔 무시
+    e.preventDefault(); e.stopPropagation();
+    if (k === 'c') { A.plOocToggle(); return }
+    if (PL.tab !== 'talk') { PL.talkLog = true; A.plTab({ dataset: { v: 'talk' } }); return }
+    A.plTalkLog();
+  }, true);
   // 대화 기록 (bundle.py takes it out of the tool's stage rebuild): one node, new lines appended, the reader's place kept;
   // it follows new lines only when already at the bottom
   window.vtTalkLog = (st, msgs) => {

@@ -22170,7 +22170,7 @@ void main(){vec3 c=texture(uHdr,vQ).rgb;
   if (document.querySelector('#app .gate')) render();  // the picker may already be on screen in the tool's layout (after the observer, so vtz-on is set)
   Z.base = base; window.VTZ = Z;  // test hooks
 })();
-</script><script id="vt-dexfx_assets">window.VT_DEXFX={"p3":{"a":"assets/f1f1e6f4e20e.webp","b":"assets/53d59b9dccf3.webp","light":[0.90625,0.021484375]},"p4":{"a":"assets/04e0dc15215f.webp","b":"assets/edba7e5795a5.webp","light":[0.8658854166666666,-0.05859375]},"p5":{"a":"assets/ba97a0dea642.webp","b":"assets/71f23db5fe5e.webp","light":[0.72265625,0.771484375]}};</script><script id="vt-dexfx">/* VT 인물전서 backdrop motion: the GPT backdrop (CSS var --vt-dexbg-<theme>) redrawn by WebGL2 so it moves by itself
+</script><script id="vt-dexfx_assets">window.VT_DEXFX={"p3":{"a":"assets/ba648c6fdac6.webp","b":"assets/53d59b9dccf3.webp","light":[0.90625,0.021484375]},"p4":{"a":"assets/bb95fb12309a.webp","b":"assets/edba7e5795a5.webp","light":[0.8658854166666666,-0.05859375]},"p5":{"a":"assets/3e15aff3e4e1.webp","b":"assets/71f23db5fe5e.webp","light":[0.72265625,0.771484375]}};</script><script id="vt-dexfx">/* VT 인물전서 backdrop motion: the GPT backdrop (CSS var --vt-dexbg-<theme>) redrawn by WebGL2 so it moves by itself
    (no mouse follow). Effect maps from scripts/dex_assets.py (window.VT_DEXFX):
    a: R water/floor/burst  G floating objects  B cloud flow/fog   b: R ray source/white shards  G depth  B twinkle/TV static/windows
    P3 ripples + rings from the light pool, moonbeams, drifting clouds, bobbing cards/shards/ribbons, twinkling stars, rising motes
@@ -22259,7 +22259,7 @@ void main(){vec3 c=texture(uHdr,vQ).rgb;
 
   let S = null;
   const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src });
-  const plate = t => { const m = getComputedStyle(document.documentElement).getPropertyValue('--vt-dexbg-' + t).match(/url\(\s*["']?(data:[^"')\s]+)/); return m && m[1] };
+  const plate = t => { const m = getComputedStyle(document.documentElement).getPropertyValue('--vt-dexbg-' + t).match(/url\(\s*["']?([^"')\s]+)/); return m && m[1] };
 
   function program(gl, fs, names) {
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(s)); return s };

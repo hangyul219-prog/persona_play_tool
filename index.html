@@ -20070,7 +20070,6 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "assets/4138ba7eba6
       return;
     }
     if (k === 'c') { const ae = document.activeElement; if (PL.ui.ooc && ae && ae.closest?.('#plOoc')) ae.blur(); A.plOocToggle(); return }
-    if (PL.tab !== 'talk') { PL.talkLog = true; A.plTab({ dataset: { v: 'talk' } }); return }
     if (PL.talkLog && document.activeElement?.closest?.('#tkLog')) document.activeElement.blur();
     A.plTalkLog();
   }, true);
@@ -20097,6 +20096,32 @@ Object.assign(window.VPD_ART||(window.VPD_ART={}),{"cut-p3": "assets/4138ba7eba6
   plTalkActive = function () { return side() ? PL.tab === 'talk' && !document.hidden && !!$('#tkStage') : active0() };
   // 자가 복구 (피드백 2026-11-27: 가끔 대사가 안 뜨고 📜 기록이 안 눌리다가 새로고침하면 돌아옴): 스탠딩 화면이
   // 상태와 어긋나 있으면(기록 열림/닫힘이 화면과 다름, 대사 상자·도구 버튼이 없음) 무대를 처음부터 다시 그림
+  // 스탠딩 밖(전투 등)에서도 대화 기록 (사용자 요청 2026-11-28): 화면을 옮기지 않고 오른쪽에 뜨는 창으로 보여 줌.
+  // 같은 #tkLog 노드를 무대와 이 창 사이에서 옮겨 다니게 해서 읽던 위치가 그대로 유지됨
+  {
+    const css = document.createElement('style'); css.id = 'vt-logpop-css';
+    css.textContent = `#vtLogPop{position:fixed;right:12px;top:96px;bottom:84px;width:min(380px,calc(100vw - 24px));z-index:950;border-radius:10px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14)}
+#vtLogPop .tk-log{padding:0 14px 12px}#vtLogPop .tk-log .ln{font-size:13.5px;padding:6px 0}
+@media (max-width:760px){#vtLogPop{top:64px;bottom:72px;right:8px;width:calc(100vw - 16px)}}`;
+    document.head.append(css);
+    const pop0 = plPaint;
+    plPaint = function () {
+      const out = pop0.apply(this, arguments);
+      try {
+        let w = document.getElementById('vtLogPop'); const L = document.getElementById('tkLog');
+        if (PL.talkLog && PL.tab !== 'talk' && plIn() && $('#app .pl')) {
+          if (!w) { w = document.createElement('div'); w.id = 'vtLogPop'; document.body.append(w) }
+          if (L && L.parentNode !== w) w.append(L);
+          vtTalkLog(w, PL.talk || []);
+        } else if (w) {
+          const st = document.getElementById('tkStage');
+          if (L && w.contains(L) && PL.talkLog && PL.tab === 'talk' && st) st.append(L);  // back on the standing screen: the log goes back to its panel
+          w.remove();
+        }
+      } catch (e) { console.warn('[VT] log popup', e) }
+      return out;
+    };
+  }
   let offSync = 0;
   setInterval(() => {
     if (typeof PL === 'undefined' || PL.tab !== 'talk' || document.hidden || !plIn() || !$('#app .pl')) { offSync = 0; return }
